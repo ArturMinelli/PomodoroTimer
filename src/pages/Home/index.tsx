@@ -1,82 +1,55 @@
-import { Play } from 'phosphor-react'
-import { useForm } from 'react-hook-form'
+import { HandPalm, Play } from 'phosphor-react'
+import { CyclesContext, NewCycleFormData } from '../../contexts/CyclesContext'
+import { FormProvider, useForm } from 'react-hook-form'
 import {
   HomeContainer,
-  FormContainer,
-  CountDownContainer,
-  Separator,
   StartCountDownButton,
-  TaskInput,
-  MinutesAmountInput,
+  StopCountDownButton,
 } from './styles'
-
-interface NewCycleFormData {
-  task: string
-  minutesAmount: number
-}
+import { CountDown } from './components/CountDown'
+import { NewCycleForm } from './components/NewCycleForm'
+import { useContext } from 'react'
 
 export function Home() {
-  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormData>({
+  const { activeCycle, createNewCycle, interruptCurrentCycle } = useContext(CyclesContext)
+
+  const newCycleForm = useForm<NewCycleFormData>({
     defaultValues: {
       task: '',
       minutesAmount: 50,
     },
   })
 
+  const { handleSubmit, watch, reset } = newCycleForm
+
   const task = watch('task')
   const minutesAmount = watch('minutesAmount')
-
   const isSubmitDisabled = !task || !minutesAmount
 
-  function handleCreateNewCycle(data: any) {
+  function handleCreateNewCycle(data: NewCycleFormData) {
+    createNewCycle(data)
     reset()
   }
 
   return (
     <HomeContainer>
       <form onSubmit={handleSubmit(handleCreateNewCycle)}>
-        <FormContainer>
-          <label htmlFor="">Vou trabalhar em</label>
-          <TaskInput
-            id="text"
-            type="text"
-            placeholder="Dê um nome para seu projeto"
-            list="task-suggestions"
-            {...register('task')}
-          />
+        <FormProvider {...newCycleForm}>
+          <NewCycleForm />
+        </FormProvider>
+        <CountDown />
 
-          <datalist id="task-suggestions">
-            <option value="Projeto 1"></option>
-            <option value="Projeto 2"></option>
-            <option value="Projeto 3"></option>
-            <option value="Projeto 4"></option>
-          </datalist>
+        {activeCycle ? (
+      <StopCountDownButton onClick={interruptCurrentCycle} type="button">
+        <HandPalm size={24} />
+        Interromper
+      </StopCountDownButton>
+        ) : (
+      <StartCountDownButton disabled={isSubmitDisabled} type="submit">
+        <Play size={24} />
+        Começar
+      </StartCountDownButton>)}
 
-          <label htmlFor="">durante</label>
-          <MinutesAmountInput
-            type="number"
-            placeholder="00"
-            id="minutesAmount"
-            step={5}
-            min={5}
-            max={60}
-            {...register('minutesAmount', { valueAsNumber: true })}
-          />
-          <span>minutos.</span>
-        </FormContainer>
-
-        <CountDownContainer>
-          <span>0</span>
-          <span>0</span>
-          <Separator>:</Separator>
-          <span>0</span>
-          <span>0</span>
-        </CountDownContainer>
-
-        <StartCountDownButton disabled={isSubmitDisabled} type="submit">
-          <Play size={24} />
-          Começar
-        </StartCountDownButton>
       </form>
     </HomeContainer>
   )
